@@ -1,0 +1,121 @@
+#!/bin/bash
+# Common configuration for Spartan training scripts
+# Expected variables that must be set before sourcing:
+# - CUDA_VISIBLE_DEVICES (optional, for non-slurm mode)
+# - NUM_GPUS (required)
+# - SERVER_NAME (required)
+# - EVAL_BATCH_SIZE (required)
+# TODO: think about sampling params for training and evaluation
+
+
+set -x
+
+export RAY_RUNTIME_ENV_HOOK=ray._private.runtime_env.uv_runtime_env_hook.hook
+export WANDB_API_KEY=7fe53a93433da3ba790681530d9fca3a3d6a04d1
+export HYDRA_FULL_ERROR=1
+export HF_HOME=/private/schwartz-lab/yarin_shaked7/hf_cache
+DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL"
+
+source .venv/bin/activate
+
+TRAIN_NUM_SEGMENTS=2
+VAL_NUM_SEGMENTS=1
+
+DATA_SIZE=$((50 * TRAIN_NUM_SEGMENTS))
+
+GLOBAL_TRAIN_BATCH_SIZE=16
+POLICY_MINI_BATCH_SIZE=16
+MICRO_FORWARD_BATCH_SIZE_PER_GPU=4
+MICRO_TRAIN_BATCH_SIZE_PER_GPU=4
+TARGET_NUM_STEPS=1000
+ROLLOUT_SIZE=8
+CHECKPOINT=null
+
+FORMAT_REWARD_COEF=0.5
+
+SPARTAN_REWARD_COEF=5.0
+
+ACCURACY_REWARD_COEF=1.0
+
+MODEL_NAME="Qwen/Qwen3-4B"
+EVAL_BEFORE_TRAIN=true
+EVAL_INTERVAL=5
+MAX_TOKENS=4000
+LR=1.0e-5
+NUM_STEPS_PER_EPOCH=$(( DATA_SIZE / POLICY_MINI_BATCH_SIZE ))
+NUM_EPOCHS=$(( (TARGET_NUM_STEPS + NUM_STEPS_PER_EPOCH - 1) / NUM_STEPS_PER_EPOCH ))
+
+TRAIN_DATA="["
+for ((i=1; i<=TRAIN_NUM_SEGMENTS; i++)); do
+  FILE_NUM=$(printf "%04d" "$i")
+  TRAIN_DATA+="\"${DATA_DIR}/train_shards/deepcoder_train_part_${FILE_NUM}.json\""
+  if (( i < TRAIN_NUM_SEGMENTS )); then
+    TRAIN_DATA+=","
+  fi
+done
+TRAIN_DATA+="]"
+
+VAL_DATA="["
+for ((i=1; i<=VAL_NUM_SEGMENTS; i++)); do
+  FILE_NUM=$(printf "%04d" "$i")
+  VAL_DATA+="\"${DATA_DIR}/test_shards/test_livecodebench_part_${FILE_NUM}.json\""
+  if (( i < VAL_NUM_SEGMENTS )); then
+    VAL_DATA+=","
+  fi
+done
+VAL_DATA+="]"
+
+
+RUN_NAME="${SERVER_NAME}_${MODEL_NAME}_spartan_reward_coef_${SPARTAN_REWARD_COEF}_format_reward_coef_${FORMAT_REWARD_COEF}_accuracy_reward_coef_${ACCURACY_REWARD_COEF}_context_${MAX_TOKENS}_lr_${LR}"
+
+uv run --isolated --extra vllm -m main_spartan_trainer \
+  data.train_data=$TRAIN_DATA \
+  data.val_data=$VAL_DATA \
+  trainer.placement.policy_num_gpus_per_node=$NUM_GPUS \
+  trainer.placement.ref_num_gpus_per_node=$NUM_GPUS \
+  trainer.epochs=$NUM_EPOCHS \
+  trainer.train_batch_size=$GLOBAL_TRAIN_BATCH_SIZE \
+  trainer.policy_mini_batch_size=$POLICY_MINI_BATCH_SIZE \
+  trainer.micro_train_batch_size_per_gpu=$MICRO_TRAIN_BATCH_SIZE_PER_GPU \
+  trainer.micro_forward_batch_size_per_gpu=$MICRO_FORWARD_BATCH_SIZE_PER_GPU \
+  trainer.max_prompt_length=$MAX_TOKENS \
+  trainer.eval_batch_size=$EVAL_BATCH_SIZE \
+  trainer.eval_before_train=$EVAL_BEFORE_TRAIN \
+  trainer.eval_interval=$EVAL_INTERVAL \
+  trainer.resume_mode=$CHECKPOINT \
+  trainer.ckpt_path="${DATA_DIR}/checkpoints/${RUN_NAME}" \
+  trainer.max_ckpts_to_keep=3 \
+  trainer.ckpt_interval=5 \
+  trainer.export_path="${DATA_DIR}/exports" \
+  trainer.logger="wandb" \
+  trainer.project_name="skyrl" \
+  trainer.run_name=$RUN_NAME \
+  trainer.dump_eval_results=false \
+  trainer.policy.model.path=$MODEL_NAME \
+  trainer.policy.model.lora.rank=16 \
+  trainer.policy.model.lora.alpha=32 \
+  trainer.policy.model.lora.dropout=0.05 \
+  trainer.policy.model.lora.lora_sync_path="${DATA_DIR}/lora_sync" \
+  trainer.policy.optimizer_config.lr=$LR \
+  trainer.policy.optimizer_config.max_grad_norm=1.0 \
+  trainer.algorithm.advantage_estimator="grpo" \
+  trainer.algorithm.use_kl_loss=false \
+  trainer.algorithm.advantage_batch_normalize=true \
+  trainer.algorithm.loss_reduction="token_mean" \
+  trainer.algorithm.grpo_norm_by_std=false \
+  trainer.algorithm.eps_clip_high=0.28 \
+  trainer.algorithm.dynamic_sampling.type="filter" \
+  trainer.algorithm.dynamic_sampling.max_sample_batches=10 \
+  generator.backend=vllm \
+  generator.num_inference_engines=$NUM_GPUS \
+  generator.inference_engine_tensor_parallel_size=1 \
+  generator.n_samples_per_prompt=$ROLLOUT_SIZE \
+  generator.gpu_memory_utilization=0.7 \
+  generator.batched=true \
+  generator.sampling_params.max_generate_length=$MAX_TOKENS \
+  generator.apply_overlong_filtering=true \
+  environment.env_class=lcb \
+  +trainer.algorithm.format_reward_coef=$FORMAT_REWARD_COEF \
+  +trainer.algorithm.spartan_reward_coef=$SPARTAN_REWARD_COEF \
+  +trainer.algorithm.accuracy_reward_coef=$ACCURACY_REWARD_COEF \
+  $@

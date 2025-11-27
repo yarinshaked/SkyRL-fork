@@ -3,7 +3,8 @@ from tqdm import tqdm
 from typing import Dict, List, Any
 from pathlib import Path
 from loguru import logger
-
+import numpy as np
+import pandas as pd
 from skyrl_train.utils import Timer
 
 from skyrl_train.generators.utils import (
@@ -21,11 +22,13 @@ from skyrl_train.utils.trainer_utils import (
     validate_generator_output,
 )
 from skyrl_train.inference_engines.utils import get_sampling_params_for_backend
+from skyrl_gym.envs.lcb.livecodebench import extract_code_from_model
+
+from general_utils import calculate_unique_variable_count, calculate_cyclomatic_complexity, calculate_halstead_volume, calculate_source_lines_of_code
 
 from omegaconf import DictConfig
 from torchdata.stateful_dataloader import StatefulDataLoader
 from transformers import AutoTokenizer
-
 
 @torch.no_grad()
 async def evaluate(
@@ -93,7 +96,67 @@ async def evaluate(
         }
     )
 
-    # 4. Prepare dumping data
+    # 4. Compute response length statistics and create wandb table
+    responses = concat_generator_outputs["response_ids"]
+    rewards = concat_generator_outputs["rewards"]
+    prompt_token_ids = concat_generator_outputs["prompt_token_ids"]
+    
+    num_tokens_arr = np.array([len(response) for response in responses])
+    string_responses = tokenizer.batch_decode(responses, skip_special_tokens=True)
+    
+    # Track which responses have code
+    extracted_code = [extract_code_from_model(response) for response in string_responses]
+    
+    # Filter to only responses that have code
+    code_responses_filtered = [code for code in extracted_code if code is not None]
+    code_responses = [tokenizer.encode(code, add_special_tokens=False) for code in code_responses_filtered]
+    num_code_tokens_arr = np.array([len(code) for code in code_responses])
+    unique_variable_count_arr = np.array([calculate_unique_variable_count(code) for code in code_responses_filtered])
+    unique_variable_count_arr = unique_variable_count_arr[~np.isnan(unique_variable_count_arr)]
+    cyclomatic_complexity_arr = np.array([calculate_cyclomatic_complexity(code) for code in code_responses_filtered])
+    cyclomatic_complexity_arr = cyclomatic_complexity_arr[~np.isnan(cyclomatic_complexity_arr)]
+    halstead_volume_arr = np.array([calculate_halstead_volume(code) for code in code_responses_filtered])
+    halstead_volume_arr = halstead_volume_arr[~np.isnan(halstead_volume_arr)]
+    source_lines_of_code_arr = np.array([calculate_source_lines_of_code(code) for code in code_responses_filtered])
+    
+    # Support both response-level and token-level rewards
+    flat_rewards = []
+    for r in rewards:
+        if isinstance(r, list):
+            flat_rewards.append(float(np.sum(r)))
+        else:
+            flat_rewards.append(float(r))
+    
+    string_prompts = tokenizer.batch_decode(prompt_token_ids, skip_special_tokens=True)
+    
+    # Create wandb table similar to get_rollout_metrics
+    summary_table = pd.DataFrame({
+        "prompt": string_prompts,
+        "code": extracted_code,
+        "full_response": string_responses,
+        "reward": flat_rewards
+    })
+    
+    # Calculate average token counts
+    avg_num_tokens = np.mean(num_tokens_arr).item()
+    avg_code_num_tokens = np.mean(num_code_tokens_arr).item() if len(num_code_tokens_arr) > 0 else 0.0
+    avg_unique_variable_count = np.mean(unique_variable_count_arr).item() if len(unique_variable_count_arr) > 0 else 0.0
+    avg_cyclomatic_complexity = np.mean(cyclomatic_complexity_arr).item() if len(cyclomatic_complexity_arr) > 0 else 0.0
+    avg_halstead_volume = np.mean(halstead_volume_arr).item() if len(halstead_volume_arr) > 0 else 0.0
+    avg_source_lines_of_code = np.mean(source_lines_of_code_arr).item() if len(source_lines_of_code_arr) > 0 else 0.0
+
+    # Add response length statistics to eval_metrics
+    eval_metrics.update({
+        "eval/avg_num_tokens": avg_num_tokens,
+        "eval/avg_code_num_tokens": avg_code_num_tokens,
+        "eval/avg_unique_variable_count": avg_unique_variable_count,
+        "eval/avg_cyclomatic_complexity": avg_cyclomatic_complexity,
+        "eval/avg_halstead_volume": avg_halstead_volume,
+        "eval/avg_source_lines_of_code": avg_source_lines_of_code,
+        "eval/summary_table": summary_table
+    })
+
+    # 5. Prepare dumping data
     # TODO[Ben] update this to be cloud-compatible
     if cfg.trainer.dump_eval_results:
         with Timer("dump_eval_results"):
@@ -114,3 +177,4 @@ async def evaluate(
             )
 
     return eval_metrics
+    

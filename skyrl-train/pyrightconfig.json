@@ -1,0 +1,45 @@
+{
+  "include": [
+    "."
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/.*",
+    "**/node_modules",
+    "**/build",
+    "**/dist",
+    "**/.venv",
+    "**/venv"
+  ],
+  "extraPaths": [
+    ".",
+    "./skyrl-gym",
+    "./skyrl-gym/skyrl_gym"
+  ],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownArgumentType": false,
+  "reportUnknownVariableType": false,
+  "reportGeneralTypeIssues": false,
+  "reportUnusedImport": true,
+  "reportUnusedVariable": true,
+  "reportUnusedFunction": true,
+  "reportUnusedClass": true,
+  "stubPath": "",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "pythonVersion": "3.12",
+      "pythonPlatform": "Linux",
+      "extraPaths": [
+        ".",
+        "./skyrl-gym",
+        "./skyrl-gym/skyrl_gym"
+      ]
+    }
+  ]
+}
+
