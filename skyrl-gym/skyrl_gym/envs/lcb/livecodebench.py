@@ -601,6 +601,12 @@ def postprocess_lcb_sample(sample):
     return sample
 
 
+def _temp_run(sample, generation, debug, result, metadata_list, timeout):
+        res, metadata = run_test(sample, test=generation, debug=debug, timeout=timeout)
+        result.append(res)
+        metadata_list.append(metadata)
+
+
 def lcb_check_correctness(sample, generation, timeout=6, debug=False):
     """Check correctness of code generation with a global timeout.
     The global timeout is to catch some extreme/rare cases not handled by the timeouts
@@ -611,11 +617,6 @@ def lcb_check_correctness(sample, generation, timeout=6, debug=False):
     manager = multiprocessing.Manager()
     result = manager.list()
     metadata_list = manager.list()
-
-    def _temp_run(sample, generation, debug, result, metadata_list, timeout):
-        res, metadata = run_test(sample, test=generation, debug=debug, timeout=timeout)
-        result.append(res)
-        metadata_list.append(metadata)
 
     p = multiprocessing.Process(
         target=_temp_run,
