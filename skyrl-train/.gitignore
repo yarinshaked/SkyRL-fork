@@ -9,3 +9,7 @@ build/
 dist/
 *.egg-info/
 .vscode/
+
+# Pickle files
+*.pkl
+*.pickle

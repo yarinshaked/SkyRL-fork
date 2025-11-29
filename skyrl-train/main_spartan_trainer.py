@@ -10,7 +10,7 @@ from skyrl_train.entrypoints.main_base import BasePPOExp, config_dir, validate_c
 from skyrl_train.generators.base import GeneratorOutput
 import re
 import numpy as np
-from general_utils import calculate_unique_variable_count, calculate_cyclomatic_complexity, calculate_halstead_volume, calculate_source_lines_of_code
+from general_utils import calculate_cyclomatic_complexity
     
 
 class SpartanTrainer(RayPPOTrainer):
@@ -21,7 +21,7 @@ class SpartanTrainer(RayPPOTrainer):
         return code_blocks[-1].strip()
 
     def calculate_spartan_metrics(self, code: str):
-        return calculate_halstead_volume(code)
+        return calculate_cyclomatic_complexity(code)
     
     @torch.no_grad()
     def postprocess_generator_output(self, generator_output: GeneratorOutput, uids: List[str]) -> GeneratorOutput:
@@ -99,7 +99,6 @@ class SpartanTrainer(RayPPOTrainer):
                     accuracy_reward = accuracy_reward_coef
                     rel = (mean_len - spartan_metrics[i]) / std_len
                     spartan_reward = max(-spartan_reward_coef, spartan_reward_coef * rel)
-                    spartan_reward = spartan_reward_coef * rel
                     format_reward = format_reward_coef
                 
                 new_reward = accuracy_reward + format_reward + spartan_reward

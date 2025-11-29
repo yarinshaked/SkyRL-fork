@@ -33,7 +33,7 @@ CHECKPOINT=null
 
 FORMAT_REWARD_COEF=0.5
 
-SPARTAN_REWARD_COEF=50.0
+SPARTAN_REWARD_COEF=100.0
 
 ACCURACY_REWARD_COEF=1.0
 
@@ -105,7 +105,7 @@ uv run --isolated --extra vllm -m main_spartan_trainer \
   trainer.algorithm.grpo_norm_by_std=false \
   trainer.algorithm.eps_clip_high=0.28 \
   trainer.algorithm.dynamic_sampling.type="filter" \
-  trainer.algorithm.dynamic_sampling.max_sample_batches=10 \
+  trainer.algorithm.dynamic_sampling.max_sample_batches=30 \
   generator.backend=vllm \
   generator.num_inference_engines=$NUM_GPUS \
   generator.inference_engine_tensor_parallel_size=1 \
