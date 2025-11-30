@@ -17,8 +17,8 @@ export HF_HOME=/private/schwartz-lab/yarin_shaked7/hf_cache
 
 source .venv/bin/activate
 
-TRAIN_NUM_SEGMENTS=1
-VAL_NUM_SEGMENTS=1
+TRAIN_NUM_SEGMENTS=12
+VAL_NUM_SEGMENTS=6
 
 DATA_SIZE=$((50 * TRAIN_NUM_SEGMENTS))
 
@@ -30,7 +30,7 @@ TARGET_NUM_STEPS=1000
 ROLLOUT_SIZE=8
 CHECKPOINT=null
 
-INSTRUCTIONS="VANILLA"
+INSTRUCTIONS="SPARTAN"
 if [ "$INSTRUCTIONS" == "SPARTAN" ]; then
   DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL/data/spartan"
 else
@@ -38,7 +38,7 @@ else
 fi
 
 
-REWARDS="VANILLA"
+REWARDS="SPARTAN"
 if [ "$REWARDS" == "SPARTAN" ]; then
   TRAINER="main_spartan_trainer"
 else
