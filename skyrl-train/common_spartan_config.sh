@@ -14,12 +14,11 @@ export RAY_RUNTIME_ENV_HOOK=ray._private.runtime_env.uv_runtime_env_hook.hook
 export WANDB_API_KEY=7fe53a93433da3ba790681530d9fca3a3d6a04d1
 export HYDRA_FULL_ERROR=1
 export HF_HOME=/private/schwartz-lab/yarin_shaked7/hf_cache
-DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL/data"
 
 source .venv/bin/activate
 
-TRAIN_NUM_SEGMENTS=12
-VAL_NUM_SEGMENTS=6
+TRAIN_NUM_SEGMENTS=1
+VAL_NUM_SEGMENTS=1
 
 DATA_SIZE=$((50 * TRAIN_NUM_SEGMENTS))
 
@@ -31,15 +30,15 @@ TARGET_NUM_STEPS=1000
 ROLLOUT_SIZE=8
 CHECKPOINT=null
 
-INSTRUCTIONS="SPARTAN"
+INSTRUCTIONS="VANILLA"
 if [ "$INSTRUCTIONS" == "SPARTAN" ]; then
-  DATA_DIR="SPARTAN"
+  DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL/data/spartan"
 else
-  DATA_DIR="SkyRL"
+  DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL/data/vanilla"
 fi
 
 
-REWARDS="SPARTAN"
+REWARDS="VANILLA"
 if [ "$REWARDS" == "SPARTAN" ]; then
   TRAINER="main_spartan_trainer"
 else
@@ -79,7 +78,7 @@ done
 VAL_DATA+="]"
 
 
-RUN_NAME="${SERVER_NAME}_${MODEL_NAME}_spartan_reward_coef_${SPARTAN_REWARD_COEF}_format_reward_coef_${FORMAT_REWARD_COEF}_accuracy_reward_coef_${ACCURACY_REWARD_COEF}_context_${MAX_TOKENS}_lr_${LR}"
+RUN_NAME="${SERVER_NAME}_rewards_${REWARDS}_instructions_${INSTRUCTIONS}_model_${MODEL_NAME}_spartan_reward_coef_${SPARTAN_REWARD_COEF}_format_reward_coef_${FORMAT_REWARD_COEF}_accuracy_reward_coef_${ACCURACY_REWARD_COEF}_context_${MAX_TOKENS}_lr_${LR}"
 
 uv run --isolated --extra vllm -m $TRAINER \
   data.train_data=$TRAIN_DATA \
@@ -120,8 +119,8 @@ uv run --isolated --extra vllm -m $TRAINER \
   trainer.algorithm.dynamic_sampling.type="filter" \
   trainer.algorithm.dynamic_sampling.max_sample_batches=30 \
   generator.backend=vllm \
-  generator.num_inference_engines=$NUM_GPUS \
-  generator.inference_engine_tensor_parallel_size=1 \
+  generator.num_inference_engines=1 \
+  generator.inference_engine_tensor_parallel_size=$NUM_GPUS \
   generator.n_samples_per_prompt=$ROLLOUT_SIZE \
   generator.gpu_memory_utilization=0.7 \
   generator.batched=true \

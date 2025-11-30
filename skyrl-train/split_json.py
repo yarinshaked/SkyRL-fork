@@ -83,5 +83,7 @@ if __name__ == "__main__":
     OUTPUT_DIR = "split_files"
     ITEMS_PER_FILE = 1000
     
-    split_json_file("/private/schwartz-lab/yarin_shaked7/SkyRL/deepcoder_train.json", output_dir="/private/schwartz-lab/yarin_shaked7/SkyRL/train_shards", items_per_file=50)
-    split_json_file("/private/schwartz-lab/yarin_shaked7/SkyRL/test_livecodebench.json", output_dir="/private/schwartz-lab/yarin_shaked7/SkyRL/test_shards", items_per_file=50)
+    split_json_file("/private/schwartz-lab/yarin_shaked7/SkyRL/data/spartan/deepcoder_train.json", output_dir="/private/schwartz-lab/yarin_shaked7/SkyRL/data/spartan/train_shards", items_per_file=50)
+    split_json_file("/private/schwartz-lab/yarin_shaked7/SkyRL/data/spartan/test_livecodebench.json", output_dir="/private/schwartz-lab/yarin_shaked7/SkyRL/data/spartan/test_shards", items_per_file=50)
+    split_json_file("/private/schwartz-lab/yarin_shaked7/SkyRL/data/vanilla/deepcoder_train.json", output_dir="/private/schwartz-lab/yarin_shaked7/SkyRL/data/vanilla/train_shards", items_per_file=50)
+    split_json_file("/private/schwartz-lab/yarin_shaked7/SkyRL/data/vanilla/test_livecodebench.json", output_dir="/private/schwartz-lab/yarin_shaked7/SkyRL/data/vanilla/test_shards", items_per_file=50)
