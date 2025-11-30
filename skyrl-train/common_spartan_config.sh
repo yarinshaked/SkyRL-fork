@@ -14,7 +14,7 @@ export RAY_RUNTIME_ENV_HOOK=ray._private.runtime_env.uv_runtime_env_hook.hook
 export WANDB_API_KEY=7fe53a93433da3ba790681530d9fca3a3d6a04d1
 export HYDRA_FULL_ERROR=1
 export HF_HOME=/private/schwartz-lab/yarin_shaked7/hf_cache
-DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL"
+DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL/data"
 
 source .venv/bin/activate
 
@@ -26,15 +26,28 @@ DATA_SIZE=$((50 * TRAIN_NUM_SEGMENTS))
 MICRO_FORWARD_BATCH_SIZE_PER_GPU=4
 MICRO_TRAIN_BATCH_SIZE_PER_GPU=4
 POLICY_MINI_BATCH_SIZE=$((MICRO_TRAIN_BATCH_SIZE_PER_GPU * NUM_GPUS))
-GLOBAL_TRAIN_BATCH_SIZE=$((POLICY_MINI_BATCH_SIZE * 2))
+GLOBAL_TRAIN_BATCH_SIZE=$((POLICY_MINI_BATCH_SIZE * 1))
 TARGET_NUM_STEPS=1000
 ROLLOUT_SIZE=8
 CHECKPOINT=null
 
+INSTRUCTIONS="SPARTAN"
+if [ "$INSTRUCTIONS" == "SPARTAN" ]; then
+  DATA_DIR="SPARTAN"
+else
+  DATA_DIR="SkyRL"
+fi
+
+
+REWARDS="SPARTAN"
+if [ "$REWARDS" == "SPARTAN" ]; then
+  TRAINER="main_spartan_trainer"
+else
+  TRAINER="skyrl_train.entrypoints.main_base"
+fi
+
 FORMAT_REWARD_COEF=0.5
-
-SPARTAN_REWARD_COEF=100.0
-
+SPARTAN_REWARD_COEF=5.0
 ACCURACY_REWARD_COEF=1.0
 
 MODEL_NAME="Qwen/Qwen3-4B"
@@ -68,7 +81,7 @@ VAL_DATA+="]"
 
 RUN_NAME="${SERVER_NAME}_${MODEL_NAME}_spartan_reward_coef_${SPARTAN_REWARD_COEF}_format_reward_coef_${FORMAT_REWARD_COEF}_accuracy_reward_coef_${ACCURACY_REWARD_COEF}_context_${MAX_TOKENS}_lr_${LR}"
 
-uv run --isolated --extra vllm -m main_spartan_trainer \
+uv run --isolated --extra vllm -m $TRAINER \
   data.train_data=$TRAIN_DATA \
   data.val_data=$VAL_DATA \
   trainer.placement.policy_num_gpus_per_node=$NUM_GPUS \

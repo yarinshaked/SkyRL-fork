@@ -17,6 +17,23 @@ import pandas as pd
 
 LCB_SYSTEM_MESSAGE_GENERIC = "You are an expert Python programmer. You will be given a question (problem specification) and will generate a correct Python program that matches the specification and passes all tests."
 
+LCB_SYSTEM_MESSAGE_SPARTAN = """
+You are an **Expert Python Programmer** and **Spartan Code Generator**. Your **SOLE GOAL** is to generate a **100% Correct Python Program or Function** that strictly adheres to the Spartan Programming paradigm.
+
+**MANDATORY SPARTAN CONSTRAINTS:**
+1.  **Correctness First:** Code must be correct and pass all tests.
+2.  **Minimize Volume:** Minimize LoC, tokens, and characters. Avoid all comments/docstrings/empty lines. Use compact K&R formatting.
+3.  **Minimize State:** Minimize variables. Inline single-use variables. Use single-character/short names (e.g., 'n', 'i', 'x'). Define variables at the smallest scope.
+4.  **Simplify Flow:** Minimize explicit `if`/`elif`/`else`. Aggressively use **ternaries** and lookups. Minimize nesting. Prefer built-ins (`sum`, `map`) and **comprehensions** over explicit loops. Employ **early `return`** to flatten logic.
+5.  **Concise Routines:** Keep routines extremely short. Minimize parameters.
+
+**FEW-SHOT EXAMPLES:**
+def sq(n): return n*n if n > 0 else 0
+def se(l): return sum(x for x in l if x % 2 == 0)
+def f(n): return 1 if n <= 1 else n * f(n-1)
+def uc(l): return list(map(lambda s: s.upper(), l))
+"""
+
 LCB_FORMATTING_MESSAGE_WITH_STARTER_CODE = "You will use the following starter code to write the solution to the problem and enclose your code within delimiters."
 
 LCB_FORMATTING_WITHOUT_STARTER_CODE = "Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT."
@@ -60,9 +77,9 @@ def load_dataset(dataset_name: str, split: str, base_dir: Optional[str] = None) 
         raise ValueError(f"Error loading dataset: {str(e)}")
 
 
-def fetch_live_code_bench_system_prompt(prompt: str, starter_code: str = None):
+def fetch_live_code_bench_system_prompt(prompt: str, starter_code=None, system_message: str = LCB_SYSTEM_MESSAGE_GENERIC):
     # https://github.com/LiveCodeBench/LiveCodeBench/blob/main/lcb_runner/prompts/code_generation.py
-    prompt = LCB_SYSTEM_MESSAGE_GENERIC + "\n\n" + prompt
+    prompt = system_message + "\n\n" + prompt
     if starter_code:
         prompt += f"### Format: {LCB_FORMATTING_MESSAGE_WITH_STARTER_CODE}\n"
         prompt += f"```python\n{starter_code}\n```\n\n"
@@ -73,7 +90,7 @@ def fetch_live_code_bench_system_prompt(prompt: str, starter_code: str = None):
     return prompt
 
 
-def process_example(example: Dict[str, Any], idx: int, dataset_name: str, split: str) -> Optional[Dict[str, Any]]:
+def process_example(example: Dict[str, Any], idx: int, dataset_name: str, split: str, system_message: str = LCB_SYSTEM_MESSAGE_GENERIC) -> Optional[Dict[str, Any]]:
     """Process a single dataset example.
 
     Args:
@@ -103,7 +120,7 @@ def process_example(example: Dict[str, Any], idx: int, dataset_name: str, split:
 
     if dataset_name == LIVECODEBENCH:
         starter_code = example.get("starter_code", None)
-        question = fetch_live_code_bench_system_prompt(question, starter_code)
+        question = fetch_live_code_bench_system_prompt(question, starter_code, system_message)
     if isinstance(question, dict):
         question = json.dumps(question)
     data = {
@@ -120,7 +137,7 @@ def process_example(example: Dict[str, Any], idx: int, dataset_name: str, split:
     return data
 
 
-def process_dataset(dataset_name: str, split: str, dataset_dir: str, local_dir: str, max_rows: Optional[int] = None):
+def process_dataset(dataset_name: str, split: str, dataset_dir: str, local_dir: str, max_rows: Optional[int] = None, system_message: str = LCB_SYSTEM_MESSAGE_GENERIC):
     """Process a dataset for a given split.
 
     Args:
@@ -137,7 +154,7 @@ def process_dataset(dataset_name: str, split: str, dataset_dir: str, local_dir: 
     # Process examples
     processed_data = []
     for idx, example in enumerate(raw_data):
-        processed_example = process_example(example, idx, dataset_name, split)
+        processed_example = process_example(example, idx, dataset_name, split, system_message)
         if processed_example is not None:
             processed_data.append(processed_example)
 
@@ -178,7 +195,19 @@ if __name__ == "__main__":
         default=None,
         help="Maximum number of rows to include in output files (truncate if set).",
     )
+    parser.add_argument(
+        "--spartan",
+        action="store_true",
+        help="Use Spartan system message",
+    )
     args = parser.parse_args()
+
+    if args.spartan:
+        print("Using Spartan system message!!")
+        system_message = LCB_SYSTEM_MESSAGE_SPARTAN
+    else:
+        print("Using generic system message!!")
+        system_message = LCB_SYSTEM_MESSAGE_GENERIC
 
     local_dir = args.local_dir
     print(f"Local_dir:{local_dir}")
@@ -188,10 +217,10 @@ if __name__ == "__main__":
         os.makedirs(local_dir, exist_ok=True)
 
     # Process train dataset
-    train_data = process_dataset(LIVECODEBENCH, "train", args.dataset_dir, local_dir, args.max_rows)
+    train_data = process_dataset(LIVECODEBENCH, "train", args.dataset_dir, local_dir, args.max_rows, system_message)
 
     # Process test dataset
-    val_data = process_dataset(LIVECODEBENCH, "test", args.dataset_dir, local_dir, args.max_rows)
+    val_data = process_dataset(LIVECODEBENCH, "test", args.dataset_dir, local_dir, args.max_rows, system_message)
 
     # Save combined train dataset
     all_train_df = pd.DataFrame(train_data)
