@@ -1,16 +1,17 @@
 #!/bin/bash
-#SBATCH --job-name=yarin_B200
-#SBATCH --output=/private/schwartz-lab/yarin_shaked7/SkyRL-fork/skyrl-train/logs/h200_train_%j.out  # STDOUT + STDERR log file
-#SBATCH --error=/private/schwartz-lab/yarin_shaked7/SkyRL-fork/skyrl-train/logs/h200_train_%j.err   # Separate STDERR log (optional)
-#SBATCH --gres=gpu:2
-#SBATCH --partition=B200-12h
+#SBATCH --job-name=yarin_B200_test
+#SBATCH --output=/private/schwartz-lab/yarin_shaked7/SkyRL-fork/skyrl-train/logs/b200_train_%j.out  # STDOUT + STDERR log file
+#SBATCH --error=/private/schwartz-lab/yarin_shaked7/SkyRL-fork/skyrl-train/logs/b200_train_%j.err   # Separate STDERR log (optional)
+#SBATCH --gres=gpu:1
+#SBATCH --partition=p_b200_schwartz
+#SBATCH --account=ug_schwartz
 #SBATCH --mem=250G
+#SBATCH --mail-user=yarin.shaked7@gmail.com
+#SBATCH --mail-type=ALL
 
 NUM_GPUS=$(echo "$SLURM_JOB_GPUS" | tr ',' '\n' | wc -l)
 
 SERVER_NAME="B200"
-EVAL_BATCH_SIZE=32
+EVAL_BATCH_SIZE=1024
 
-# Load common configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source ${SCRIPT_DIR}/common_spartan_config.sh
+source /private/schwartz-lab/yarin_shaked7/SkyRL-fork/skyrl-train/common_spartan_config.sh

@@ -1,6 +1,7 @@
 #!/bin/bash
 # Common configuration for Spartan training scripts
 # Expected variables that must be set before sourcing:
+# - CUDA_VISIBLE_DEVICES (optional, for non-slurm mode)
 # - NUM_GPUS (required)
 # - SERVER_NAME (required)
 # - EVAL_BATCH_SIZE (required)
@@ -16,20 +17,20 @@ export HF_HOME=/private/schwartz-lab/yarin_shaked7/hf_cache
 
 source .venv/bin/activate
 
-TRAIN_NUM_SEGMENTS=12
-VAL_NUM_SEGMENTS=6
+TRAIN_NUM_SEGMENTS=1
+VAL_NUM_SEGMENTS=1
 
 DATA_SIZE=$((50 * TRAIN_NUM_SEGMENTS))
 
-MICRO_FORWARD_BATCH_SIZE_PER_GPU=4
-MICRO_TRAIN_BATCH_SIZE_PER_GPU=4
+MICRO_FORWARD_BATCH_SIZE_PER_GPU=2
+MICRO_TRAIN_BATCH_SIZE_PER_GPU=2
 POLICY_MINI_BATCH_SIZE=$((MICRO_TRAIN_BATCH_SIZE_PER_GPU * NUM_GPUS))
 GLOBAL_TRAIN_BATCH_SIZE=$((POLICY_MINI_BATCH_SIZE * 1))
-TARGET_NUM_STEPS=1000
+TARGET_NUM_STEPS=10
 ROLLOUT_SIZE=8
 CHECKPOINT=null
 
-INSTRUCTIONS="VANILLA"
+INSTRUCTIONS="SPARTAN"
 if [ "$INSTRUCTIONS" == "SPARTAN" ]; then
   DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL/data/spartan"
 else
@@ -37,7 +38,7 @@ else
 fi
 
 
-REWARDS="VANILLA"
+REWARDS="SPARTAN"
 if [ "$REWARDS" == "SPARTAN" ]; then
   TRAINER="main_spartan_trainer"
 else
