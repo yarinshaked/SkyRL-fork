@@ -9,12 +9,9 @@
 #SBATCH --mail-user=yarin.shaked7@gmail.com
 #SBATCH --mail-type=ALL
 
-set -x
 
-echo "AFTER PULL******************************************************************"
-
-TRAIN_NUM_SEGMENTS=12
-VAL_NUM_SEGMENTS=6
+TRAIN_NUM_SEGMENTS=1
+VAL_NUM_SEGMENTS=1
 
 DATA_SIZE=$((50 * TRAIN_NUM_SEGMENTS))
 
