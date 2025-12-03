@@ -69,7 +69,6 @@ VAL_DATA+="]"
 
 RUN_NAME="${PARTITION}_rewards_${REWARDS}_instructions_${INSTRUCTIONS}_model_${MODEL_NAME}_spartan_reward_coef_${SPARTAN_REWARD_COEF}_format_reward_coef_${FORMAT_REWARD_COEF}_accuracy_reward_coef_${ACCURACY_REWARD_COEF}_context_${MAX_TOKENS}_lr_${LR}"
 
-: <<'UV_RUN_DOCUMENTATION'
 uv run --isolated --extra vllm -m $TRAINER \
   data.train_data=$TRAIN_DATA \
   data.val_data=$VAL_DATA \
@@ -122,4 +121,3 @@ uv run --isolated --extra vllm -m $TRAINER \
   +trainer.algorithm.spartan_reward_coef=$SPARTAN_REWARD_COEF \
   +trainer.algorithm.accuracy_reward_coef=$ACCURACY_REWARD_COEF \
   $@
-UV_RUN_DOCUMENTATION
