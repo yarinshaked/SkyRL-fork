@@ -15,8 +15,8 @@ VAL_NUM_SEGMENTS=1
 
 DATA_SIZE=$((50 * TRAIN_NUM_SEGMENTS))
 
-MICRO_FORWARD_BATCH_SIZE_PER_GPU=4
-MICRO_TRAIN_BATCH_SIZE_PER_GPU=4
+MICRO_FORWARD_BATCH_SIZE_PER_GPU=1
+MICRO_TRAIN_BATCH_SIZE_PER_GPU=1
 POLICY_MINI_BATCH_SIZE=$((MICRO_TRAIN_BATCH_SIZE_PER_GPU * NUM_GPUS))
 GLOBAL_TRAIN_BATCH_SIZE=$((POLICY_MINI_BATCH_SIZE * 1))
 TARGET_NUM_STEPS=1000
@@ -86,7 +86,7 @@ uv run --isolated --extra vllm -m $TRAINER \
   trainer.resume_mode=$CHECKPOINT \
   trainer.ckpt_path="${DATA_DIR}/checkpoints/${RUN_NAME}" \
   trainer.max_ckpts_to_keep=3 \
-  trainer.ckpt_interval=5 \
+  trainer.ckpt_interval=1 \
   trainer.export_path="${DATA_DIR}/exports/${RUN_NAME}" \
   trainer.logger="wandb" \
   trainer.project_name="skyrl" \
