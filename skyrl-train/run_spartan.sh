@@ -1,44 +1,36 @@
 #!/bin/bash
-# Common configuration for Spartan training scripts
-# Expected variables that must be set before sourcing:
-# - CUDA_VISIBLE_DEVICES (optional, for non-slurm mode)
-# - NUM_GPUS (required)
-# - SERVER_NAME (required)
-# - EVAL_BATCH_SIZE (required)
-# TODO: think about sampling params for training and evaluation
-
+#SBATCH --job-name=$JOB_NAME
+#SBATCH --output=logs/$JOB_NAME_%j.out
+#SBATCH --error=logs/$JOB_NAME_%j.err
+#SBATCH --gres=gpu:$NUM_GPUS
+#SBATCH --partition=$PARTITION
+#SBATCH --account=$ACCOUNT
+#SBATCH --mem=250G
+#SBATCH --mail-user=yarin.shaked7@gmail.com
+#SBATCH --mail-type=ALL
 
 set -x
 
-export RAY_RUNTIME_ENV_HOOK=ray._private.runtime_env.uv_runtime_env_hook.hook
-export WANDB_API_KEY=7fe53a93433da3ba790681530d9fca3a3d6a04d1
-export HYDRA_FULL_ERROR=1
-export HF_HOME=/private/schwartz-lab/yarin_shaked7/hf_cache
+echo "AFTER PULL******************************************************************"
 
-source .venv/bin/activate
-
-TRAIN_NUM_SEGMENTS=1
-VAL_NUM_SEGMENTS=1
+TRAIN_NUM_SEGMENTS=12
+VAL_NUM_SEGMENTS=6
 
 DATA_SIZE=$((50 * TRAIN_NUM_SEGMENTS))
 
-MICRO_FORWARD_BATCH_SIZE_PER_GPU=2
-MICRO_TRAIN_BATCH_SIZE_PER_GPU=2
+MICRO_FORWARD_BATCH_SIZE_PER_GPU=4
+MICRO_TRAIN_BATCH_SIZE_PER_GPU=4
 POLICY_MINI_BATCH_SIZE=$((MICRO_TRAIN_BATCH_SIZE_PER_GPU * NUM_GPUS))
 GLOBAL_TRAIN_BATCH_SIZE=$((POLICY_MINI_BATCH_SIZE * 1))
-TARGET_NUM_STEPS=10
+TARGET_NUM_STEPS=1000
 ROLLOUT_SIZE=8
-CHECKPOINT=null
 
-INSTRUCTIONS="SPARTAN"
 if [ "$INSTRUCTIONS" == "SPARTAN" ]; then
-  DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL/data/spartan"
+  SPECIFIC_DATA_DIR="${DATA_DIR}/spartan"
 else
-  DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL/data/vanilla"
+  SPECIFIC_DATA_DIR="${DATA_DIR}/vanilla"
 fi
 
-
-REWARDS="SPARTAN"
 if [ "$REWARDS" == "SPARTAN" ]; then
   TRAINER="main_spartan_trainer"
 else
@@ -60,7 +52,7 @@ NUM_EPOCHS=$(( (TARGET_NUM_STEPS + NUM_STEPS_PER_EPOCH - 1) / NUM_STEPS_PER_EPOC
 TRAIN_DATA="["
 for ((i=1; i<=TRAIN_NUM_SEGMENTS; i++)); do
   FILE_NUM=$(printf "%04d" "$i")
-  TRAIN_DATA+="\"${DATA_DIR}/train_shards/deepcoder_train_part_${FILE_NUM}.json\""
+  TRAIN_DATA+="\"${SPECIFIC_DATA_DIR}/train_shards/deepcoder_train_part_${FILE_NUM}.json\""
   if (( i < TRAIN_NUM_SEGMENTS )); then
     TRAIN_DATA+=","
   fi
@@ -70,7 +62,7 @@ TRAIN_DATA+="]"
 VAL_DATA="["
 for ((i=1; i<=VAL_NUM_SEGMENTS; i++)); do
   FILE_NUM=$(printf "%04d" "$i")
-  VAL_DATA+="\"${DATA_DIR}/test_shards/test_livecodebench_part_${FILE_NUM}.json\""
+  VAL_DATA+="\"${SPECIFIC_DATA_DIR}/test_shards/test_livecodebench_part_${FILE_NUM}.json\""
   if (( i < VAL_NUM_SEGMENTS )); then
     VAL_DATA+=","
   fi
@@ -78,7 +70,7 @@ done
 VAL_DATA+="]"
 
 
-RUN_NAME="${SERVER_NAME}_rewards_${REWARDS}_instructions_${INSTRUCTIONS}_model_${MODEL_NAME}_spartan_reward_coef_${SPARTAN_REWARD_COEF}_format_reward_coef_${FORMAT_REWARD_COEF}_accuracy_reward_coef_${ACCURACY_REWARD_COEF}_context_${MAX_TOKENS}_lr_${LR}"
+RUN_NAME="${PARTITION}_rewards_${REWARDS}_instructions_${INSTRUCTIONS}_model_${MODEL_NAME}_spartan_reward_coef_${SPARTAN_REWARD_COEF}_format_reward_coef_${FORMAT_REWARD_COEF}_accuracy_reward_coef_${ACCURACY_REWARD_COEF}_context_${MAX_TOKENS}_lr_${LR}"
 
 uv run --isolated --extra vllm -m $TRAINER \
   data.train_data=$TRAIN_DATA \
@@ -91,14 +83,14 @@ uv run --isolated --extra vllm -m $TRAINER \
   trainer.micro_train_batch_size_per_gpu=$MICRO_TRAIN_BATCH_SIZE_PER_GPU \
   trainer.micro_forward_batch_size_per_gpu=$MICRO_FORWARD_BATCH_SIZE_PER_GPU \
   trainer.max_prompt_length=$MAX_TOKENS \
-  trainer.eval_batch_size=$EVAL_BATCH_SIZE \
+  trainer.eval_batch_size=1024 \
   trainer.eval_before_train=$EVAL_BEFORE_TRAIN \
   trainer.eval_interval=$EVAL_INTERVAL \
   trainer.resume_mode=$CHECKPOINT \
-  trainer.ckpt_path="/private/schwartz-lab/yarin_shaked7/SkyRL/checkpoints/${RUN_NAME}" \
+  trainer.ckpt_path="${DATA_DIR}/checkpoints/${RUN_NAME}" \
   trainer.max_ckpts_to_keep=3 \
   trainer.ckpt_interval=5 \
-  trainer.export_path="/private/schwartz-lab/yarin_shaked7/SkyRL/exports" \
+  trainer.export_path="${DATA_DIR}/exports/${RUN_NAME}" \
   trainer.logger="wandb" \
   trainer.project_name="skyrl" \
   trainer.run_name=$RUN_NAME \
@@ -107,7 +99,7 @@ uv run --isolated --extra vllm -m $TRAINER \
   trainer.policy.model.lora.rank=16 \
   trainer.policy.model.lora.alpha=32 \
   trainer.policy.model.lora.dropout=0.05 \
-  trainer.policy.model.lora.lora_sync_path="/private/schwartz-lab/yarin_shaked7/SkyRL/lora_sync" \
+  trainer.policy.model.lora.lora_sync_path="${DATA_DIR}/lora_sync/${RUN_NAME}" \
   trainer.policy.optimizer_config.lr=$LR \
   trainer.policy.optimizer_config.max_grad_norm=1.0 \
   trainer.algorithm.advantage_estimator="grpo" \
@@ -125,15 +117,7 @@ uv run --isolated --extra vllm -m $TRAINER \
   generator.batched=true \
   generator.gpu_memory_utilization=0.7 \
   generator.sampling_params.max_generate_length=$MAX_TOKENS \
-  generator.sampling_params.temperature=0.6 \
-  generator.sampling_params.top_p=0.95 \
-  generator.sampling_params.min_p=0.0 \
-  generator.sampling_params.top_k=20 \
   generator.eval_sampling_params.max_generate_length=$MAX_TOKENS \
-  generator.eval_sampling_params.temperature=0.6 \
-  generator.eval_sampling_params.top_p=0.95 \
-  generator.eval_sampling_params.min_p=0.0 \
-  generator.eval_sampling_params.top_k=20 \
   generator.apply_overlong_filtering=true \
   environment.env_class=lcb \
   +trainer.algorithm.format_reward_coef=$FORMAT_REWARD_COEF \
