@@ -13,3 +13,4 @@ dist/
 # Pickle files
 *.pkl
 *.pickle
+logs/

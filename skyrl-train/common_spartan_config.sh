@@ -29,7 +29,7 @@ TARGET_NUM_STEPS=1000
 ROLLOUT_SIZE=8
 CHECKPOINT=null
 
-INSTRUCTIONS="VANILLA"
+INSTRUCTIONS="SPARTAN"
 if [ "$INSTRUCTIONS" == "SPARTAN" ]; then
   DATA_DIR="/private/schwartz-lab/yarin_shaked7/SkyRL/data/spartan"
 else
