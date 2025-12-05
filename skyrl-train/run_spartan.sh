@@ -1,14 +1,4 @@
 #!/bin/bash
-#SBATCH --job-name=$JOB_NAME
-#SBATCH --output=logs/$JOB_NAME_%j.out
-#SBATCH --error=logs/$JOB_NAME_%j.err
-#SBATCH --gres=gpu:$NUM_GPUS
-#SBATCH --partition=$PARTITION
-#SBATCH --account=$ACCOUNT
-#SBATCH --mem=250G
-#SBATCH --mail-user=yarin.shaked7@gmail.com
-#SBATCH --mail-type=ALL
-
 
 TRAIN_NUM_SEGMENTS=12
 VAL_NUM_SEGMENTS=6
