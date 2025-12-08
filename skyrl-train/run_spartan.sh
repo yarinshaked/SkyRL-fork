@@ -11,6 +11,7 @@ POLICY_MINI_BATCH_SIZE=$((MICRO_TRAIN_BATCH_SIZE_PER_GPU * NUM_GPUS))
 GLOBAL_TRAIN_BATCH_SIZE=$((POLICY_MINI_BATCH_SIZE * 1))
 TARGET_NUM_STEPS=1000
 ROLLOUT_SIZE=8
+GPU_MEMORY_UTILIZATION=0.5
 
 if [ "$INSTRUCTIONS" == "SPARTAN" ]; then
   SPECIFIC_DATA_DIR="${DATA_DIR}/spartan"
@@ -102,7 +103,7 @@ uv run --isolated --extra vllm -m $TRAINER \
   generator.inference_engine_tensor_parallel_size=1 \
   generator.n_samples_per_prompt=$ROLLOUT_SIZE \
   generator.batched=true \
-  generator.gpu_memory_utilization=0.7 \
+  generator.gpu_memory_utilization=$GPU_MEMORY_UTILIZATION \
   generator.sampling_params.max_generate_length=$MAX_TOKENS \
   generator.eval_sampling_params.max_generate_length=$MAX_TOKENS \
   generator.apply_overlong_filtering=true \
