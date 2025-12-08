@@ -186,11 +186,7 @@ class FSDPPolicyWorkerBase(PolicyWorkerBase):
                     param = param.to(device, non_blocking=True).full_tensor() if isinstance(param, DTensor) else param
                     # cast to generator dtype
                     param = param.to(generator_dtype)
-                    # Ensure all ranks in the model update group are synchronized before broadcast
-                    # This is critical for small GPU counts (e.g., 2 GPUs) where timing issues can cause NCCL timeouts
-                    if torch.distributed.get_rank() == 0 and self._model_update_group is not None:
-                        # Synchronize CUDA operations before broadcast to ensure tensor is ready
-                        torch.cuda.synchronize()
+                    if torch.distributed.get_rank() == 0:
                         torch.distributed.broadcast(param.data, 0, group=self._model_update_group)
 
                 await asyncio.to_thread(gather_and_broadcast, param)
