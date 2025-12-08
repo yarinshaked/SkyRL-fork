@@ -106,7 +106,7 @@ uv run --isolated --extra vllm -m $TRAINER \
   generator.inference_engine_tensor_parallel_size=1 \
   generator.n_samples_per_prompt=$ROLLOUT_SIZE \
   generator.batched=true \
-  generator.enforce_eager=false \
+  generator.enforce_eager=true \
   generator.gpu_memory_utilization=$GPU_MEMORY_UTILIZATION \
   generator.sampling_params.max_generate_length=$MAX_TOKENS \
   generator.eval_sampling_params.max_generate_length=$MAX_TOKENS \
