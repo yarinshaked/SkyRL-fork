@@ -1,8 +1,5 @@
 #!/bin/bash
 
-export NCCL_DEBUG=INFO
-export TORCH_DISTRIBUTED_DEBUG=DETAIL
-
 TRAIN_NUM_SEGMENTS=12
 VAL_NUM_SEGMENTS=6
 
@@ -106,7 +103,6 @@ uv run --isolated --extra vllm -m $TRAINER \
   generator.inference_engine_tensor_parallel_size=1 \
   generator.n_samples_per_prompt=$ROLLOUT_SIZE \
   generator.batched=true \
-  generator.enforce_eager=true \
   generator.gpu_memory_utilization=$GPU_MEMORY_UTILIZATION \
   generator.sampling_params.max_generate_length=$MAX_TOKENS \
   generator.eval_sampling_params.max_generate_length=$MAX_TOKENS \
