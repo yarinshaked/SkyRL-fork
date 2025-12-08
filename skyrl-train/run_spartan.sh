@@ -99,8 +99,8 @@ uv run --isolated --extra vllm -m $TRAINER \
   trainer.algorithm.dynamic_sampling.type="filter" \
   trainer.algorithm.dynamic_sampling.max_sample_batches=30 \
   generator.backend=vllm \
-  generator.num_inference_engines=$NUM_GPUS \
-  generator.inference_engine_tensor_parallel_size=1 \
+  generator.num_inference_engines=1 \
+  generator.inference_engine_tensor_parallel_size=$NUM_GPUS \
   generator.n_samples_per_prompt=$ROLLOUT_SIZE \
   generator.batched=true \
   generator.gpu_memory_utilization=$GPU_MEMORY_UTILIZATION \
