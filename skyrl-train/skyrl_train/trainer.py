@@ -2,6 +2,7 @@ import asyncio
 import math
 import os
 import shutil
+import wandb
 from typing import Any, List, Optional, Dict, Tuple, Union
 from jaxtyping import Float
 from pathlib import Path
@@ -104,6 +105,7 @@ class RayPPOTrainer:
 
         self.reward_kl_controller: Optional[Union[FixedKLController, AdaptiveKLController]] = None
         configure_ray_worker_logging()
+        self.eval_summary_table = None
 
     def _build_train_dataloader_and_compute_training_steps(self):
         """
@@ -133,6 +135,17 @@ class RayPPOTrainer:
             global_step=self.global_step,
             tokenizer=self.tokenizer,
         )
+        step_eval_summary_table = eval_metrics["eval/summary_table"]
+        if self.eval_summary_table is None:
+            self.eval_summary_table = wandb.Table(
+                columns=list(step_eval_summary_table.columns),
+                log_mode="INCREMENTAL",
+            )
+
+        for row in step_eval_summary_table.itertuples(index=False, name=None):
+            self.eval_summary_table.add_data(*row)
+
+        eval_metrics["eval/summary_table"] = self.eval_summary_table
         return eval_metrics
 
     def train(self):
