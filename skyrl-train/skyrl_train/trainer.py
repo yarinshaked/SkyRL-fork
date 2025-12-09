@@ -146,6 +146,12 @@ class RayPPOTrainer:
             self.eval_summary_table.add_data(*row)
 
         eval_metrics["eval/summary_table"] = self.eval_summary_table
+        import pickle
+        with open(f"eval_summary_table_{self.cfg.trainer.run_name}.pkl", "wb") as f:
+            pickle.dump(self.eval_summary_table, f, protocol=pickle.HIGHEST_PROTOCOL)
+            f.flush()                 # push Python buffer to OS
+            os.fsync(f.fileno())      # force OS cache to disk
+
         return eval_metrics
 
     def train(self):

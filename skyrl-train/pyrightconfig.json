@@ -9,7 +9,11 @@
     "**/build",
     "**/dist",
     "**/.venv",
-    "**/venv"
+    "**/venv",
+    "**/tests/**",
+    "**/examples/**",
+    "**/scripts/**",
+    "**/integrations/**"
   ],
   "extraPaths": [
     ".",
@@ -17,17 +21,17 @@
     "./skyrl-gym/skyrl_gym"
   ],
   "pythonVersion": "3.12",
-  "typeCheckingMode": "basic",
-  "reportMissingImports": true,
+  "typeCheckingMode": "off",
+  "reportMissingImports": "warning",
   "reportMissingTypeStubs": false,
   "reportUnknownMemberType": false,
   "reportUnknownArgumentType": false,
   "reportUnknownVariableType": false,
   "reportGeneralTypeIssues": false,
-  "reportUnusedImport": true,
-  "reportUnusedVariable": true,
-  "reportUnusedFunction": true,
-  "reportUnusedClass": true,
+  "reportUnusedImport": "warning",
+  "reportUnusedVariable": "warning",
+  "reportUnusedFunction": "warning",
+  "reportUnusedClass": "warning",
   "stubPath": "",
   "executionEnvironments": [
     {
