@@ -98,7 +98,7 @@ class SpartanTrainer(RayPPOTrainer):
                 elif has_code and base_ok:
                     accuracy_reward = accuracy_reward_coef
                     rel = (mean_len - spartan_metrics[i]) / std_len
-                    spartan_reward = max(-spartan_reward_coef, spartan_reward_coef * rel)
+                    spartan_reward = max(-accuracy_reward_coef, spartan_reward_coef * rel)
                     format_reward = format_reward_coef
                 
                 new_reward = accuracy_reward + format_reward + spartan_reward

@@ -137,26 +137,14 @@ class RayPPOTrainer:
         )
         step_eval_summary_table = eval_metrics["eval/summary_table"]
         if self.eval_summary_table is None:
-            # Initialize the table on first call
             self.eval_summary_table = wandb.Table(
                 columns=list(step_eval_summary_table.columns),
                 log_mode="INCREMENTAL",
             )
 
-        # Create a new table with same columns and existing data
-        # Workaround for https://github.com/wandb/wandb/issues/2981#issuecomment-1997445737
-        new_table = wandb.Table(
-            columns=list(step_eval_summary_table.columns),
-            data=self.eval_summary_table.data,
-            log_mode="INCREMENTAL",
-        )
-
-        # Add new rows from current step
         for row in step_eval_summary_table.itertuples(index=False, name=None):
-            new_table.add_data(*row)
+            self.eval_summary_table.add_data(*row)
 
-        # Update reference and use for logging
-        self.eval_summary_table = new_table
         eval_metrics["eval/summary_table"] = self.eval_summary_table
         import pickle
         with open(f"{self.cfg.trainer.export_path}/eval_summary_table.pkl", "wb") as f:
