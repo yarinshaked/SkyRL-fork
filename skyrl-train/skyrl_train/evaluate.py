@@ -107,7 +107,7 @@ async def evaluate(
     # Track which responses have code
     extracted_code = [extract_code_from_model(response) for response in string_responses]
     
-    # Filter to only responses that have code
+    # Filter to only responses that have code (for computing averages)
     code_responses_filtered = [code for code in extracted_code if code is not None]
     code_responses = [tokenizer.encode(code, add_special_tokens=False) for code in code_responses_filtered]
     num_code_tokens_arr = np.array([len(code) for code in code_responses])
@@ -118,6 +118,32 @@ async def evaluate(
     halstead_volume_arr = np.array([calculate_halstead_volume(code) for code in code_responses_filtered])
     halstead_volume_arr = halstead_volume_arr[~np.isnan(halstead_volume_arr)]
     source_lines_of_code_arr = np.array([calculate_source_lines_of_code(code) for code in code_responses_filtered])
+    
+    # Compute metrics for all responses (for table) - None where code is None
+    unique_variable_count_list = []
+    cyclomatic_complexity_list = []
+    halstead_volume_list = []
+    source_lines_of_code_list = []
+    
+    for code in extracted_code:
+        if code is None:
+            unique_variable_count_list.append(None)
+            cyclomatic_complexity_list.append(None)
+            halstead_volume_list.append(None)
+            source_lines_of_code_list.append(None)
+        else:
+            # Calculate metrics, handling NaN values from syntax errors
+            uv_count = calculate_unique_variable_count(code)
+            unique_variable_count_list.append(None if np.isnan(uv_count) else uv_count)
+            
+            cc = calculate_cyclomatic_complexity(code)
+            cyclomatic_complexity_list.append(None if np.isnan(cc) else cc)
+            
+            hv = calculate_halstead_volume(code)
+            halstead_volume_list.append(None if np.isnan(hv) else hv)
+            
+            sloc = calculate_source_lines_of_code(code)
+            source_lines_of_code_list.append(sloc)
     
     # Support both response-level and token-level rewards
     flat_rewards = []
@@ -134,7 +160,11 @@ async def evaluate(
         "prompt": string_prompts,
         "code": extracted_code,
         "full_response": string_responses,
-        "reward": flat_rewards
+        "reward": flat_rewards,
+        "unique_variable_count": unique_variable_count_list,
+        "cyclomatic_complexity": cyclomatic_complexity_list,
+        "source_lines_of_code": source_lines_of_code_list,
+        "halstead_volume": halstead_volume_list,
     })
     
     # Calculate average token counts
