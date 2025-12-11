@@ -82,7 +82,7 @@ uv run --isolated --extra vllm -m $TRAINER \
   trainer.logger="wandb" \
   trainer.project_name="skyrl" \
   trainer.run_name=$RUN_NAME \
-  trainer.dump_eval_results=true \
+  trainer.dump_eval_results=false \
   trainer.policy.model.path=$MODEL_NAME \
   trainer.policy.model.lora.rank=16 \
   trainer.policy.model.lora.alpha=32 \

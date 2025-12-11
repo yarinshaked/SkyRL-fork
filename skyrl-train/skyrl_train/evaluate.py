@@ -186,6 +186,13 @@ async def evaluate(
         "eval/summary_table": summary_table
     })
 
+    import pickle
+    import os
+    with open(f"{cfg.trainer.export_path}/eval_data.pkl", "wb") as f:
+        pickle.dump((generator_outputs, concat_generator_outputs), f, protocol=pickle.HIGHEST_PROTOCOL)
+        f.flush()                 # push Python buffer to OS
+        os.fsync(f.fileno())      # force OS cache to disk
+
     # 5. Prepare dumping data
     # TODO[Ben] update this to be cloud-compatible
     if cfg.trainer.dump_eval_results:
