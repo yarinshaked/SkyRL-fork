@@ -1,7 +1,7 @@
 #!/bin/bash
 
-TRAIN_NUM_SEGMENTS=12
-VAL_NUM_SEGMENTS=6
+TRAIN_NUM_SEGMENTS=1
+VAL_NUM_SEGMENTS=1
 
 DATA_SIZE=$((50 * TRAIN_NUM_SEGMENTS))
 
@@ -31,7 +31,7 @@ ACCURACY_REWARD_COEF=1.0
 
 MODEL_NAME="Qwen/Qwen3-4B"
 EVAL_BEFORE_TRAIN=true
-EVAL_INTERVAL=5
+EVAL_INTERVAL=1
 MAX_TOKENS=4000
 LR=1.0e-5
 NUM_STEPS_PER_EPOCH=$(( DATA_SIZE / POLICY_MINI_BATCH_SIZE ))
@@ -82,7 +82,7 @@ uv run --isolated --extra vllm -m $TRAINER \
   trainer.logger="wandb" \
   trainer.project_name="skyrl" \
   trainer.run_name=$RUN_NAME \
-  trainer.dump_eval_results=false \
+  trainer.dump_eval_results=true \
   trainer.policy.model.path=$MODEL_NAME \
   trainer.policy.model.lora.rank=16 \
   trainer.policy.model.lora.alpha=32 \
