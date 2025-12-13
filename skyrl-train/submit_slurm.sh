@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Wrapper script to submit SLURM jobs with environment variables
-# Usage: REWARDS=VANILLA INSTRUCTIONS=SPARTAN ... ./submit_slurm.sh
-
-# Build sbatch command with options from environment variables
 SBATCH_OPTS=()
 
 if [ -n "$JOB_NAME" ]; then

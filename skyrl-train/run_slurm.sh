@@ -5,7 +5,7 @@
 
 DockerName=slurm-job-$SLURM_JOB_ID
 
-docker run --name "$DockerName" --rm --gpus all \
+docker run --name "$DockerName" --rm --gpus "device=${SLURM_JOB_GPUS}" \
     --user root \
     --shm-size=8g \
     -e WANDB_API_KEY="7fe53a93433da3ba790681530d9fca3a3d6a04d1" \
