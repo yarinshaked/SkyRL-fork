@@ -1,7 +1,7 @@
 #!/bin/bash
 
-TRAIN_NUM_SEGMENTS=1
-VAL_NUM_SEGMENTS=1
+TRAIN_NUM_SEGMENTS=12
+VAL_NUM_SEGMENTS=6
 
 DATA_SIZE=$((50 * TRAIN_NUM_SEGMENTS))
 
@@ -31,7 +31,7 @@ ACCURACY_REWARD_COEF=1.0
 
 MODEL_NAME="Qwen/Qwen3-4B"
 EVAL_BEFORE_TRAIN=true
-EVAL_INTERVAL=1
+EVAL_INTERVAL=5
 MAX_TOKENS=4000
 LR=1.0e-5
 NUM_STEPS_PER_EPOCH=$(( DATA_SIZE / POLICY_MINI_BATCH_SIZE ))
@@ -58,7 +58,7 @@ done
 VAL_DATA+="]"
 
 
-RUN_NAME="${PARTITION}_rewards_${REWARDS}_instructions_${INSTRUCTIONS}_model_${MODEL_NAME}_spartan_reward_coef_${SPARTAN_REWARD_COEF}_format_reward_coef_${FORMAT_REWARD_COEF}_accuracy_reward_coef_${ACCURACY_REWARD_COEF}_context_${MAX_TOKENS}_lr_${LR}"
+RUN_NAME="${PARTITION}_r_${REWARDS}_i_${INSTRUCTIONS}_model_${MODEL_NAME}_spartan_rl_reward_${SPARTAN_RL_REWARD}_spartan_reward_coef_${SPARTAN_REWARD_COEF}_format_reward_coef_${FORMAT_REWARD_COEF}_accuracy_reward_coef_${ACCURACY_REWARD_COEF}_context_${MAX_TOKENS}_lr_${LR}"
 
 uv run --isolated --extra vllm -m $TRAINER \
   data.train_data=$TRAIN_DATA \
@@ -111,4 +111,5 @@ uv run --isolated --extra vllm -m $TRAINER \
   +trainer.algorithm.format_reward_coef=$FORMAT_REWARD_COEF \
   +trainer.algorithm.spartan_reward_coef=$SPARTAN_REWARD_COEF \
   +trainer.algorithm.accuracy_reward_coef=$ACCURACY_REWARD_COEF \
+  +trainer.algorithm.spartan_rl_reward=$SPARTAN_RL_REWARD \
   $@

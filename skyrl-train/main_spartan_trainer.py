@@ -10,7 +10,7 @@ from skyrl_train.entrypoints.main_base import BasePPOExp, config_dir, validate_c
 from skyrl_train.generators.base import GeneratorOutput
 import re
 import numpy as np
-from general_utils import calculate_halstead_volume
+from general_utils import calculate_halstead_volume, calculate_unique_variable_count, calculate_cyclomatic_complexity
     
 
 class SpartanTrainer(RayPPOTrainer):
@@ -21,7 +21,14 @@ class SpartanTrainer(RayPPOTrainer):
         return code_blocks[-1].strip()
 
     def calculate_spartan_metrics(self, code: str):
-        return calculate_halstead_volume(code)
+        spartan_reward_type = self.cfg.trainer.algorithm.spartan_rl_reward
+
+        if spartan_reward_type == "halstead_volume":
+            return calculate_halstead_volume(code)
+        elif spartan_reward_type == "unique_variable_count":
+            return calculate_unique_variable_count(code)
+        elif spartan_reward_type == "cyclomatic_complexity":
+            return calculate_cyclomatic_complexity(code)
     
     @torch.no_grad()
     def postprocess_generator_output(self, generator_output: GeneratorOutput, uids: List[str]) -> GeneratorOutput:
