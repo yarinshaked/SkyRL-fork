@@ -468,7 +468,7 @@ def handle_filter_sampling(
         uid2metric_std[uid] = np.std(metric_vals)
 
     # Filter out groups with std == 0 and group size > 1
-    kept_uids = [uid for uid, std in uid2metric_std.items() if std > 0 or n_samples_per_prompt == 1]
+    kept_uids = [uid for uid, std in uid2metric_std.items() if std > 0 or n_samples_per_prompt == 1 or any(uid2metric_vals[uid] > 0)]
     kept_uids_set = set(kept_uids)
 
     # Filter trajectories based on kept UIDs
