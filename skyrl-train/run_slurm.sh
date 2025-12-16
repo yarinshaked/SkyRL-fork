@@ -7,6 +7,10 @@ DockerName=slurm-job-$SLURM_JOB_ID
 
 # Build Docker environment variable flags
 DOCKER_ENV_FLAGS=(-e WANDB_API_KEY="7fe53a93433da3ba790681530d9fca3a3d6a04d1")
+# Disable FlashInfer to avoid TVM/FlashInfer version mismatch error
+# This forces vLLM to use Flash Attention instead, which is more stable
+DOCKER_ENV_FLAGS+=(-e VLLM_USE_FLASHINFER=0)
+DOCKER_ENV_FLAGS+=(-e VLLM_ATTENTION_BACKEND=FLASH_ATTN)
 if [ -n "$NUM_GPUS" ]; then
     DOCKER_ENV_FLAGS+=(-e NUM_GPUS="$NUM_GPUS")
 fi
@@ -30,11 +34,6 @@ if [ -n "$DATA_DIR" ]; then
 fi
 if [ -n "$SPARTAN_RL_REWARD" ]; then
     DOCKER_ENV_FLAGS+=(-e SPARTAN_RL_REWARD="$SPARTAN_RL_REWARD")
-fi
-
-# Pass VLLM_USE_V1 if set
-if [ -n "$VLLM_USE_V1" ]; then
-    DOCKER_ENV_FLAGS+=(-e VLLM_USE_V1="$VLLM_USE_V1")
 fi
 
 # Set GPU specification for Docker

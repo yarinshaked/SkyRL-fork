@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# Default VLLM_USE_V1 to 0 if not set, to avoid experimental V1 engine issues
-if [ -z "$VLLM_USE_V1" ]; then
-    export VLLM_USE_V1=0
-fi
-
 SBATCH_OPTS=()
 
 if [ -n "$JOB_NAME" ]; then
