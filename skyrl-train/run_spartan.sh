@@ -74,7 +74,8 @@ uv run --isolated --extra vllm -m $TRAINER \
   trainer.eval_batch_size=1024 \
   trainer.eval_before_train=$EVAL_BEFORE_TRAIN \
   trainer.eval_interval=$EVAL_INTERVAL \
-  trainer.resume_mode=$CHECKPOINT \
+  trainer.resume_mode=$RESUME_MODE \
+  trainer.resume_path=$RESUME_PATH \
   trainer.ckpt_path="${DATA_DIR}/checkpoints/${RUN_NAME}" \
   trainer.max_ckpts_to_keep=3 \
   trainer.ckpt_interval=5 \
