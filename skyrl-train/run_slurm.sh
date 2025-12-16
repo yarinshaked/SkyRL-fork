@@ -6,10 +6,12 @@
 DockerName=slurm-job-$SLURM_JOB_ID
 
 # Build Docker environment variable flags
-# Use FLASH_ATTN backend instead of flashinfer to avoid compatibility issues with B200 GPUs (SM100)
-DOCKER_ENV_FLAGS=(-e WANDB_API_KEY="7fe53a93433da3ba790681530d9fca3a3d6a04d1" -e VLLM_ATTENTION_BACKEND="FLASH_ATTN")
+DOCKER_ENV_FLAGS=(-e WANDB_API_KEY="7fe53a93433da3ba790681530d9fca3a3d6a04d1")
 if [ -n "$NUM_GPUS" ]; then
     DOCKER_ENV_FLAGS+=(-e NUM_GPUS="$NUM_GPUS")
+fi
+if [ -n "$PARTITION" ]; then
+    DOCKER_ENV_FLAGS+=(-e PARTITION="$PARTITION")
 fi
 if [ -n "$REWARDS" ]; then
     DOCKER_ENV_FLAGS+=(-e REWARDS="$REWARDS")
@@ -17,8 +19,11 @@ fi
 if [ -n "$INSTRUCTIONS" ]; then
     DOCKER_ENV_FLAGS+=(-e INSTRUCTIONS="$INSTRUCTIONS")
 fi
-if [ -n "$CHECKPOINT" ]; then
-    DOCKER_ENV_FLAGS+=(-e CHECKPOINT="$CHECKPOINT")
+if [ -n "$RESUME_PATH" ]; then
+    DOCKER_ENV_FLAGS+=(-e RESUME_PATH="$RESUME_PATH")
+fi
+if [ -n "$RESUME_MODE" ]; then
+    DOCKER_ENV_FLAGS+=(-e RESUME_MODE="$RESUME_MODE")
 fi
 if [ -n "$DATA_DIR" ]; then
     DOCKER_ENV_FLAGS+=(-e DATA_DIR="$DATA_DIR")
